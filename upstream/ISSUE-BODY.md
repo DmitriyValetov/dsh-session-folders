@@ -48,7 +48,6 @@ Live on the packaged desktop app, DSH `0.2.0-rc.1` (macOS), after installing the
 
 What I could not check statically (worth a look on a real page before release): the prop contracts of the higher-level primitives (`Menu`, `Modal`, `Toast`, `Tooltip`) — they render fine here, but I did not diff their 0.1.x/0.2.0 signatures.
 
+The full diff against 0.4.3 (verified with `git apply --check -p1` on a pristine package) lives in my fork: https://github.com/DmitriyValetov/dsh-session-folders (tag `v0.5.0`) — patch: https://github.com/DmitriyValetov/dsh-session-folders/blob/v0.5.0/upstream/port-to-dsh-0.2.0.patch
+
 Thanks again — and if you would rather keep one package than two, I will happily drop mine as soon as yours carries the 0.2.x line.
-
-The full diff against 0.4.3 (verified with `git apply --check -p1` on a pristine package) is in this repo: https://github.com/DmitriyValetov/dsh-session-folders/blob/v0.5.0/upstream/port-to-dsh-0.2.0.patch — and the running package is `the scoped fork package dsh-session-folders` on npm.
-
