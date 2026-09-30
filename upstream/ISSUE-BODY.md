@@ -1,5 +1,8 @@
 Hi! Thanks for this plugin — the session-folders browser is the one thing I missed after moving to the 0.2.x line. I ported it to **DSH 0.2.0-rc.1** and it runs live in my desktop profile; here is the patch and every drift I hit, in case you want to fold it into the package (happy to open it as a PR, or to adapt it to whatever shape you prefer).
 
+Related: #6 and #7 look like the same class of failure — the host half imports harness packages that the profile never installed, so the entry dies at import time.
+
+
 ### What drifts on 0.2.0-rc.1
 
 | Area | 0.1.x (current package) | 0.2.0-rc.1 |
