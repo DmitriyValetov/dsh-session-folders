@@ -1,7 +1,7 @@
 # dsh-session-folders
 
 > **Fork notice.** This is a port of [EugeneVl/dsh_session_folders](https://github.com/EugeneVl/dsh_session_folders)
-> (MIT, © Eugene) to **DSH 0.2.0-rc.1**, published as `@scope/dsh-session-folders` and maintained at
+> (MIT, © Eugene) to **DSH 0.2.0-rc.1**, published as `dsh-session-folders (npm: the maintainer-scoped fork package)` and maintained at
 > [DmitriyValetov/dsh-session-folders](https://github.com/DmitriyValetov/dsh-session-folders). The upstream package targets the 0.1.x
 > client contract and does not activate on 0.2.x. Every change in this fork, with the reason for each, is listed in
 > [FORK-NOTES.md](FORK-NOTES.md); in short: the client store seed, `ctx.uiWorkspace.*` for navigation/archive/directory
@@ -70,7 +70,7 @@ A session-folders plugin for the DeepSeek Harness web UI: the sidebar workspace 
 ### From npm
 
 ```sh
-dsh plugin --profile web add @scope/dsh-session-folders
+dsh plugin --profile web add dsh-session-folders (npm: the maintainer-scoped fork package)
 ```
 
 A prebuilt install from the registry (no build script, no `allowBuilds` step). Replace `web` with your profile —
@@ -99,7 +99,7 @@ dsh plugin --profile web add /absolute/path/to/dsh-session-folders-0.5.0.tgz
 
 ### Manual equivalent
 
-Add `"@scope/dsh-session-folders": "^0.5.0"` to `dependencies` and the package name to `dsh.profile.bundles` in the
+Add `"dsh-session-folders (npm: the maintainer-scoped fork package)": "^0.5.0"` to `dependencies` and the package name to `dsh.profile.bundles` in the
 profile's `package.json`, then run `pnpm install` in that directory.
 
 **Restart** the profile after installing (the host plugin and the client bundle are loaded at startup).

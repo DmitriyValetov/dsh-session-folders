@@ -1,6 +1,6 @@
 {
-  "name": "@scope/dsh-session-folders",
-  "version": "0.5.0",
+  "name": "dsh-session-folders",
+  "version": "0.5.1",
   "description": "Session folders for the DSH 0.2.x web sidebar (fork of dsh-session-folders): one level of named folders per workspace, drag-and-drop or context menu to move sessions, server-side persistence. Auto rename is not included.",
   "type": "module",
   "main": "lib/index.js",

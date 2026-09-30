@@ -19,6 +19,13 @@
 Хостовый контракт портить не пришлось: `ctx.webServer.register({kind:'exact'})`, `ctx.storageDomain.open/get`,
 `ctx.workspaceRegistry.list()` в 0.2.0 те же.
 
+## Известный баг и фикс (v0.5.1)
+
+`ctx.storageDomain.open()` в 0.2.0 бросает `DomainError: domain 'dsh_session_folders' is already open`, если домен уже
+открыт. При переустановке/релоаде новая копия плагина монтируется до dispose старой, и это **валит весь хост**
+(`dsh: fatal load failure` → падение приложения Electron, тот же класс, что в апстрим-issue «plugin prevents DSH from
+starting»). С v0.5.1 плагин сначала спрашивает `ctx.storageDomain.get(DOMAIN_NAME)` и переиспользует живой домен.
+
 ## Проверено
 
 - `node --check lib/index.js`, `node --check lib/client.js`, `node --check lib/folder-utils.js`.

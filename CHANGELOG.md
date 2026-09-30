@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.5.1
+
+### Fixed
+
+- **Reinstalling or reloading the plugin no longer takes the host down.** The host mounts the next generation of an entry
+  before disposing the previous one, and `ctx.storageDomain.open("dsh_session_folders")` rejects an already-open name with
+  `DomainError: domain ... is already open` — reported by the host as `dsh: fatal load failure`, which kills the whole
+  application process and not just this entry (the same failure class as the upstream "plugin prevents DSH from starting"
+  reports). The entry now reuses the live domain through `ctx.storageDomain.get` when one exists
+- The package keeps its unscoped name so the bundle row, the installed dependency and the client module id stay identical
+  (the npm fork carries the same code under the maintainer scope, renamed)
+
 ## v0.5.0 — fork port to DSH 0.2.0-rc.1
 
 Fork of upstream `dsh-session-folders@0.4.3` (MIT, © Eugene), ported to the DSH 0.2.0-rc.1 web client and host
