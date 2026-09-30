@@ -1,0 +1,464 @@
+diff --git a/lib/client.js b/lib/client.js
+index 6938ee1..e60c79c 100644
+--- a/lib/client.js
++++ b/lib/client.js
+@@ -7,7 +7,9 @@ window.__ModuleLoader__.load({
+ 		let react = require("react");
+ 		let reactDom = require("react-dom");
+ 		let primitives = require("@deepseek-ai/dsh-client-ui-primitives");
+-		let runtimeClient = require("@deepseek-ai/dsh-client-runtime/client");
++		// Ported to DSH 0.2.0-rc.1: the 0.1.x "@deepseek-ai/dsh-client-runtime" package no longer
++		// exists; defineStore is a platform seed of "@deepseek-ai/dsh-client-store".
++		let clientStore = require("@deepseek-ai/dsh-client-store");
+ 		//#region contract
+ 		/** Wire contract shared with the host half: route names + error codes. */
+ 		const ROUTE_PREFIX = "/dsh-session-folders";
+@@ -16,7 +18,6 @@ window.__ModuleLoader__.load({
+ 		/** Create a folder in a workspace. */
+ 		const CREATE_ROUTE = ROUTE_PREFIX + "/create";
+ 		/** Suggest and pin a session title from its first user message. */
+-		const AUTO_RENAME_ROUTE = ROUTE_PREFIX + "/auto-rename";
+ 		/** Rename a folder. */
+ 		const RENAME_ROUTE = ROUTE_PREFIX + "/rename";
+ 		/** Delete a folder (its sessions return to loose). */
+@@ -36,7 +37,8 @@ const RECENT_LIMIT = 5;
+ 		/** Client plug-in identity. */
+ 		const name = "dsh-session-folders/client";
+ 		/** Client services consumed by the client half. */
+-		const inject = ["slots", "locale", "sessions", "workspaces"];
++		// "uiWorkspace" is the 0.2.0 service for session navigation, archive, and directory picking.
++		const inject = ["slots", "locale", "sessions", "workspaces", "uiWorkspace"];
+ 		/** Locale namespace registered under ctx.locale. */
+ 		const NS = "dsh-session-folders";
+ 		/** <style> tag id so the stylesheet injects once. */
+@@ -786,7 +788,7 @@ const RECENT_LIMIT = 5;
+ 		* @returns the defineStore handle (spec + identity + factory in one).
+ 		*/
+ 		function createFeatureFoldersViewStore() {
+-			return runtimeClient.defineStore({
++			return clientStore.defineStore({
+ 				init: () => ({
+ 					collapsedGroups: {},
+ 					collapsedFolders: {},
+@@ -1516,14 +1518,14 @@ const RECENT_LIMIT = 5;
+ 				e("circle", { key: "dot", cx: "7", cy: "7", r: "1.5", fill: "currentColor", stroke: "none" })
+ 			);
+ 			const groupMenuItems = (group) => [
+-				{ id: "rename", label: t("menu.rename"), icon: e(primitives.IconEditOutline16, {}) },
+-				{ id: "delete", label: t("delete.workspace"), danger: true, icon: e(primitives.IconTrashOutline16, {}) },
+-				{ id: "new-folder", label: t("menu.newFolder"), icon: e(primitives.IconPlusOutline16, {}) },
++				{ id: "rename", label: t("menu.rename"), icon: e(primitives.IconEditOutlineRegular, {}) },
++				{ id: "delete", label: t("delete.workspace"), danger: true, icon: e(primitives.IconTrashOutlineRegular, {}) },
++				{ id: "new-folder", label: t("menu.newFolder"), icon: e(primitives.IconPlusOutlineRegular, {}) },
+ 				{ id: "focus", label: t(focusedWorkspaceId === group.workspaceId ? "action.unfocus" : "action.focus"), icon: targetIcon() }
+ 			];
+ 			const folderMenuItems = () => [
+-				{ id: "rename", label: t("menu.rename"), icon: e(primitives.IconEditOutline16, {}) },
+-				{ id: "delete", label: t("delete.folder"), danger: true, icon: e(primitives.IconTrashOutline16, {}) }
++				{ id: "rename", label: t("menu.rename"), icon: e(primitives.IconEditOutlineRegular, {}) },
++				{ id: "delete", label: t("delete.folder"), danger: true, icon: e(primitives.IconTrashOutlineRegular, {}) }
+ 			];
+ 			/** Whether a session sits in a pinned list (folder or loose bucket). */
+ 			const isSessionPinned = (summary) => {
+@@ -1544,24 +1546,23 @@ const RECENT_LIMIT = 5;
+ 				// workspace, so the move submenu stays enabled even with zero folders.
+ 				const moveDisabled = workspace === void 0;
+ 				return [
+-					{ id: "rename", label: t("menu.rename"), icon: e(primitives.IconEditOutline16, {}) },
+-					{ id: "auto-rename", label: t("menu.autoRename"), icon: e(primitives.IconSparkle16, {}) },
++					{ id: "rename", label: t("menu.rename"), icon: e(primitives.IconEditOutlineRegular, {}) },
+ 					isPinned
+ 						? { id: "unpin", label: t("menu.unpin"), icon: pinIcon(true) }
+ 						: { id: "pin", label: t("menu.pin"), disabled: workspace === void 0, icon: pinIcon(false) },
+-					{ id: "fork", label: t("menu.fork"), icon: e(primitives.IconBranchOutline16, {}) },
++					{ id: "fork", label: t("menu.fork"), icon: e(primitives.IconBranchOutlineRegular, {}) },
+ 					{
+ 						id: "move",
+ 						label: t("menu.moveToFolder"),
+ 						disabled: moveDisabled,
+-						icon: e(primitives.IconFolderOpenOutline16, {}),
++						icon: e(primitives.IconFolderOpenOutlineRegular, {}),
+ 						submenu: [
+-							{ id: "move-inbox", label: t("move.inbox"), icon: e(primitives.IconPanelLeftOutline16, {}) },
++							{ id: "move-inbox", label: t("move.inbox"), icon: e(primitives.IconPanelLeftOutlineRegular, {}) },
+ 							...folderOptions.map((candidate) => ({ id: "move-folder:" + candidate.id, label: candidate.name })),
+-							{ id: "move-new-folder", label: t("menu.moveNewFolder"), icon: e(primitives.IconPlusOutline16, {}) }
++							{ id: "move-new-folder", label: t("menu.moveNewFolder"), icon: e(primitives.IconPlusOutlineRegular, {}) }
+ 						]
+ 					},
+-					{ id: "archive", label: t("menu.archiveSession"), icon: e(primitives.IconArchiveOutline20, {}) }
++					{ id: "archive", label: t("menu.archiveSession"), icon: e(primitives.IconArchiveOutlineRegular, {}) }
+ 				];
+ 			};
+ 			//#endregion
+@@ -1578,14 +1579,6 @@ const RECENT_LIMIT = 5;
+ 			};
+ 			const handleSessionMenu = (summary, id) => {
+ 				if (id === "rename") setDialog({ kind: "rename-session", id: summary.id, draft: summary.displayTitle, error: null });
+-				else if (id === "auto-rename") {
+-					callFolderRoute(AUTO_RENAME_ROUTE, { sessionId: summary.id }).then((data) => {
+-						console.log("[dsh-session-folders] auto-rename ok", data);
+-					}).catch((error) => {
+-						console.warn("[dsh-session-folders] auto-rename failed", error);
+-						setNotice({ kind: "error", text: folderErrorText(error.message ?? "request-failed", t) });
+-					});
+-				}
+ 				else if (id === "fork") forkSession(summary.id);
+ 				else if (id === "pin" || id === "unpin") pinSession(summary.id, id === "pin");
+ 				else if (id === "move-inbox") moveSessionToFolder(summary.id, null);
+@@ -1739,7 +1732,7 @@ const RECENT_LIMIT = 5;
+ 									setNotice({ kind: "error", text: error.message ?? t("error.actionFailed") });
+ 								});
+ 							}
+-						}, e(primitives.IconArchiveOutline20, { size: 14 }))
++						}, e(primitives.IconArchiveOutlineRegular, { size: 14 }))
+ 					)
+ 				);
+ 			};
+@@ -1870,7 +1863,7 @@ const RECENT_LIMIT = 5;
+ 						onDragOver: reorderHandlers.dragOver,
+ 						onDrop: reorderHandlers.drop
+ 					},
+-						e("span", { className: "dsh-ff__folder-icon" + (currentFolderId === folder.id ? " dsh-ff__icon-accent" : "") }, expanded ? e(primitives.IconFolderOpen16, {}) : e(primitives.IconFolderClose16, {})),
++						e("span", { className: "dsh-ff__folder-icon" + (currentFolderId === folder.id ? " dsh-ff__icon-accent" : "") }, expanded ? e(primitives.IconFolderOpenRegular, {}) : e(primitives.IconFolderCloseRegular, {})),
+ 					e("span", { className: "dsh-ff__title" }, folder.name),
+ 						e("button", {
+ 							type: "button",
+@@ -1885,7 +1878,7 @@ const RECENT_LIMIT = 5;
+ 										setNotice({ kind: "error", text: folderErrorText(error.message ?? "request-failed", t) });
+ 									});
+ 							}
+-						}, e(primitives.IconPlusOutline16, { size: 12 })),
++						}, e(primitives.IconPlusOutlineRegular, { size: 12 })),
+ 						folder.sessions.length > ARCHIVE_ROW_LIMIT && !moreShown.has(folder.id) && e("span", { className: "dsh-ff__folder-count" }, String(folder.sessions.length))
+ 					),
+ 					expanded && (moreShown.has(folder.id) ? folder.sessions : folder.sessions.slice(0, ARCHIVE_ROW_LIMIT)).map((summary, index, all) => {
+@@ -1988,7 +1981,7 @@ const RECENT_LIMIT = 5;
+ 						onClick: () => actions.setFolderCollapsed(targetKey, !expanded),
+ 						onContextMenu: (event) => event.preventDefault()
+ 					},
+-						e("span", { className: "dsh-ff__folder-icon" }, e(primitives.IconArchiveOutline20, { size: 16 })),
++						e("span", { className: "dsh-ff__folder-icon" }, e(primitives.IconArchiveOutlineRegular, { size: 16 })),
+ 						e("span", { className: "dsh-ff__title" }, t("archive.folder")),
+ 						sessions.length > ARCHIVE_ROW_LIMIT && !moreShown.has("archive:" + workspaceId) && e("span", { className: "dsh-ff__folder-count" }, String(sessions.length))
+ 					),
+@@ -2054,7 +2047,7 @@ const RECENT_LIMIT = 5;
+ 					onDragOver: reorderHandlers.dragOver,
+ 					onDrop: reorderHandlers.drop
+ 				},
+-					e("span", { className: "dsh-ff__folder-icon" + (expanded && group.workspaceId === currentWorkspaceId ? " dsh-ff__icon-accent" : "") }, expanded ? e(primitives.IconFolderOpen16, {}) : e(primitives.IconFolderClose16, {})),
++					e("span", { className: "dsh-ff__folder-icon" + (expanded && group.workspaceId === currentWorkspaceId ? " dsh-ff__icon-accent" : "") }, expanded ? e(primitives.IconFolderOpenRegular, {}) : e(primitives.IconFolderCloseRegular, {})),
+ 					e("span", { className: "dsh-ff__title" }, group.title),
+ 					!isUngrouped && e("button", {
+ 						type: "button",
+@@ -2093,7 +2086,7 @@ const RECENT_LIMIT = 5;
+ 								setNotice({ kind: "error", text: error.message ?? t("error.actionFailed") });
+ 							});
+ 						}
+-					}, e(primitives.IconFolderOpen16, { size: 14 })),
++					}, e(primitives.IconFolderOpenRegular, { size: 14 })),
+ 					!isUngrouped && e("button", {
+ 						type: "button",
+ 						className: "dsh-ff__icon-button",
+@@ -2103,7 +2096,7 @@ const RECENT_LIMIT = 5;
+ 							event.stopPropagation();
+ 							if (startSession !== void 0) startSession(group.workspaceId);
+ 						}
+-					}, e(primitives.IconPlusOutline16, {}))
++					}, e(primitives.IconPlusOutlineRegular, {}))
+ 				);
+ 			};
+ 			const renderGroup = (group) => {
+@@ -2122,7 +2115,7 @@ const RECENT_LIMIT = 5;
+ 			//#endregion
+ 			//#region header
+ 			const searchBox = e("div", { className: "dsh-ff__search" },
+-				e(primitives.IconSearchOutline16, {}),
++				e(primitives.IconSearchOutlineRegular, {}),
+ 				e("input", {
+ 					ref: searchInput,
+ 					className: "dsh-ff__search-input",
+@@ -2137,7 +2130,7 @@ const RECENT_LIMIT = 5;
+ 					className: "dsh-ff__icon-button",
+ 					"aria-label": t("search.clear"),
+ 					onClick: () => { setQuery(""); searchInput.current?.focus(); }
+-				}, e(primitives.IconCloseFill14, {}))
++				}, e(primitives.IconCloseFillMedium, {}))
+ 			);
+ 			const openSearch = () => {
+ 				if (!wide) {
+@@ -2224,14 +2217,14 @@ const RECENT_LIMIT = 5;
+ 					"aria-label": t("search.aria"),
+ 					title: t("search.aria"),
+ 					onClick: openSearch
+-				}, e(primitives.IconSearchOutline16, {}))),
++				}, e(primitives.IconSearchOutlineRegular, {}))),
+ 				e("button", {
+ 					type: "button",
+ 					className: "dsh-ff__icon-button",
+ 					"aria-label": t("menu.newWorkspace"),
+ 					title: t("menu.newWorkspace"),
+ 					onClick: handleNewWorkspace
+-				}, e(primitives.IconProjectAddOutline16, {}))
++				}, e(primitives.IconProjectAddOutlineRegular, {}))
+ 			);
+ 			//#endregion
+ 			//#region list
+@@ -2243,7 +2236,7 @@ const RECENT_LIMIT = 5;
+ 					"aria-label": t("notice.dismiss"),
+ 					title: t("notice.dismiss"),
+ 					onClick: () => { setNotice(null); setFoldersError(null); }
+-				}, e(primitives.IconCloseFill14, {}))
++				}, e(primitives.IconCloseFillMedium, {}))
+ 			);
+ 			const browserList = view.groups.length === 0 && view.ungrouped === null && recentSessions.length === 0
+ 				? e("div", { className: "dsh-ff__empty" }, t("empty.none"))
+@@ -2608,14 +2601,14 @@ const RECENT_LIMIT = 5;
+ 						"aria-label": t("search.aria"),
+ 						title: t("search.aria"),
+ 						onClick: openSearch
+-					}, e(primitives.IconSearchOutline16, { size: 18 })),
++					}, e(primitives.IconSearchOutlineRegular, { size: 18 })),
+ 					e("button", {
+ 						type: "button",
+ 						className: "dsh-ff__rail-search",
+ 						"aria-label": t("menu.newWorkspace"),
+ 						title: t("menu.newWorkspace"),
+ 						onClick: handleNewWorkspace
+-					}, e(primitives.IconProjectAddOutline16, { size: 18 }))
++					}, e(primitives.IconProjectAddOutlineRegular, { size: 18 }))
+ 				),
+ 				noticeBar,
+ 				e("div", { className: "dsh-ff__list" }, wide ? (trimmedQuery !== "" ? searchList : browserList) : null),
+@@ -2624,12 +2617,53 @@ const RECENT_LIMIT = 5;
+ 				renderOriginCard()
+ 			);
+ 		}
++		//#region open-in-app transport (ported: ctx.workspaces.openPath is gone in 0.2.0)
++		/** GET route serving the host's probed application ids. */
++		const OPEN_IN_APP_APPS_ROUTE = "/open-in-app/apps";
++		/** POST route launching one resolved application on one absolute directory. */
++		const OPEN_IN_APP_OPEN_ROUTE = "/open-in-app/open";
++		/** Catalog ids that open a directory in the platform file manager, most specific first. */
++		const FOLDER_APP_IDS = ["explorer", "finder", "filemanager"];
++		/**
++		* Resolve the host base URL. A sandboxed document reports the literal origin
++		* "null", which cannot address the host; the connection carrier's sentinel is
++		* the fallback the official button uses.
++		* @returns the absolute base URL of the current host.
++		*/
++		function hostBase() {
++			const origin = globalThis.location?.origin;
++			return origin !== void 0 && origin !== "null" ? origin : "http://dsh.internal";
++		}
++		/**
++		* Open one absolute directory in the platform file manager through the host's
++		* open-in-app routes.
++		* @param path - the workspace's absolute directory.
++		* @returns after the host acknowledged the launch; rejects on any refusal.
++		*/
++		async function openWorkspacePath(path) {
++			const appsResponse = await fetch(new URL(OPEN_IN_APP_APPS_ROUTE, hostBase()), {
++				headers: { accept: "application/json" },
++				cache: "no-store"
++			});
++			if (!appsResponse.ok) throw new Error("open-in-app apps request failed: " + appsResponse.status);
++			const apps = (await appsResponse.json()).apps;
++			const available = Array.isArray(apps) ? apps.filter((id) => typeof id === "string") : [];
++			const appId = FOLDER_APP_IDS.find((id) => available.includes(id));
++			if (appId === void 0) throw new Error("no file manager resolved on this host");
++			const response = await fetch(new URL(OPEN_IN_APP_OPEN_ROUTE, hostBase()), {
++				method: "POST",
++				headers: { "Content-Type": "application/json" },
++				body: JSON.stringify({ app: appId, path })
++			});
++			if (!response.ok) throw new Error("open-in-app launch failed: " + response.status);
++		}
++		//#endregion
+ 		//#region registration
+ 		function apply(ctx) {
+ 			ctx.effect(() => ctx.locale.register(NS, { zh, en }), "dsh-session-folders: dictionaries");
+ 			/** Entry inject: session/workspace actions behind the kit surface. */
+ 			const injected = () => ({
+-				open: (sessionId) => { ctx.sessions.open(sessionId); },
++				open: (sessionId) => { ctx.uiWorkspace.openSession(sessionId); },
+ 				searchSessions: async (query, signal) => {
+ 					const result = await ctx.sessions.search(query, signal);
+ 					if (result.ok !== true) throw new Error(result.error.message);
+@@ -2645,18 +2679,20 @@ const RECENT_LIMIT = 5;
+ 				forkSession: (sessionId) => {
+ 					ctx.sessions.fork({ sessionId, increaseTitle: true }).then((result) => {
+ 						const childId = typeof result === "string" ? result : result?.value?.sessionId;
+-						if (childId !== void 0) ctx.sessions.open(childId);
++						if (childId !== void 0) ctx.uiWorkspace.openSession(childId);
+ 					}).catch(() => {});
+ 				},
+ 				renameWorkspace: async (workspaceId, title) => { await ctx.workspaces.rename(workspaceId, title); },
+ 				deleteWorkspace: async (workspaceId) => { await ctx.workspaces.delete(workspaceId); },
+ 				archiveSession: async (sessionId) => { await ctx.workspaces.archiveSession(sessionId); },
+-				refreshWorkspaces: () => ctx.workspaces.refresh(),
++				// 0.2.0 removed ctx.workspaces.refresh(): the workspace projection follows the Host
++				// changed frames, so a Workspace created here appears without an explicit pull.
++				refreshWorkspaces: () => {},
+ 				createWorkspace: (input) => ctx.workspaces.create(input),
+-				pickDirectory: () => ctx.workspaces.pickDirectory(),
+-				startSession: (workspaceId) => ctx.workspaces.startSession(workspaceId),
+-				connectWorkspace: (workspaceId) => ctx.workspaces.connectWorkspace(workspaceId),
+-				openWorkspaceFolder: (workspacePath) => ctx.workspaces.openPath(workspacePath),
++				pickDirectory: () => ctx.uiWorkspace.pickDirectory(),
++				startSession: (workspaceId) => ctx.uiWorkspace.startSession(workspaceId),
++				connectWorkspace: (workspaceId) => ctx.uiWorkspace.connectWorkspace(workspaceId),
++				openWorkspaceFolder: (workspacePath) => openWorkspacePath(workspacePath),
+ 			});
+ 			ctx.slots.inject("sidebar.workspaces", () => ctx.slots.register({
+ 				name: "sidebar.workspaces",
+diff --git a/lib/index.js b/lib/index.js
+index 5317bb1..09bc7ab 100644
+--- a/lib/index.js
++++ b/lib/index.js
+@@ -11,11 +11,28 @@
+ // and unauthenticated (dsh-session-manager precedent), so every input is
+ // validated server-side.
+ 
+-import { defineDomain } from "@deepseek-ai/dsh-storage-domain";
+-import { BlockAssembler, createUserMessage } from "@deepseek-ai/dsh-llm";
+ import { z } from "zod";
+ import { randomUUID } from "node:crypto";
+-import { hasNameConflict, isExactIdSet, normalizeAutoTitle, parseFolderName } from "./folder-utils.js";
++import { hasNameConflict, isExactIdSet, parseFolderName } from "./folder-utils.js";
++
++// Ported to DSH 0.2.0-rc.1: a profile plugin resolves modules from the profile's own
++// node_modules, so harness packages (@deepseek-ai/dsh-storage-domain / -dsh-llm) are not
++// importable here. The domain declaration helper and its checks are inlined below, and the
++// auto-rename model call (which needed -dsh-llm) is removed together with its client entry.
++/**
++* Validate one storage-domain declaration.
++* @param spec - the declaration handed to ctx.storageDomain.open.
++* @returns the same declaration.
++*/
++function defineDomain(spec) {
++	if (!/^[a-z][a-z0-9_]*$/.test(spec.name)) throw new Error(`domain name '${spec.name}' is invalid`);
++	if (!Number.isInteger(spec.version) || spec.version < 0) throw new Error(`domain '${spec.name}' version must be a non-negative integer`);
++	for (const compat of spec.compatibleVersions ?? []) if (!Number.isInteger(compat) || compat < 0 || compat >= spec.version) throw new Error(`domain '${spec.name}' compatibleVersions entries must be non-negative integers below version ${spec.version}`);
++	if (spec.layout !== void 0 && spec.layout !== "single" && spec.layout !== "per-record") throw new Error(`domain '${spec.name}' layout must be 'single' or 'per-record'`);
++	for (const table of Object.keys(spec.tables)) if (!/^[a-z][a-z0-9_]*$/.test(table)) throw new Error(`domain '${spec.name}' table name '${table}' is invalid`);
++	if (spec.global !== void 0 && spec.global.schema.safeParse(null).success) throw new Error(`domain '${spec.name}' global schema must not accept null`);
++	return spec;
++}
+ 
+ /** Plug-in identity used by the cordis loader. */
+ const name = "dsh-session-folders";
+@@ -24,7 +41,7 @@ const name = "dsh-session-folders";
+ * ctx.logger is a built-in Context property and must never be injected;
+ * only these three real services are needed.
+ */
+-const inject = ["webServer", "storageDomain", "workspaceRegistry", "sessions", "sessionTitle", "llm"];
++const inject = ["webServer", "storageDomain", "workspaceRegistry"];
+ 
+ 
+ 
+@@ -36,27 +53,7 @@ const MAX_BODY_BYTES = 65536;
+ const SESSION_ID_RE = /^(session-)?[0-9a-fA-F-]+$/;
+ /** Folder ids are always server-issued UUIDs. */
+ const FOLDER_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+-/** Sessions with an auto-rename model stream already running (concurrency guard). */
+-const autoRenameInFlight = new Set();
+ 
+-/** Auto-rename: the first text of the first human message in a session log. */
+-const firstUserMessageText = (events) => {
+-	for (const event of events) {
+-		if (event.type !== "user/message" || event.data?.source?.kind !== "user") continue;
+-		const text = (event.data.content ?? []).filter((block) => block.type === "text")
+-			.map((block) => block.text).join("\n");
+-		if (text.trim().length > 0) return text;
+-	}
+-	return null;
+-};
+-/** Auto-rename system instruction: a 3-4 word title of the task at hand. */
+-const AUTO_RENAME_SYSTEM = [
+-	"Create a short session title from the user's first message.",
+-	"The title must be at most 3 words (prepositions do not count): a description of the process, feature, or task.",
+-	"Use the language of the message.",
+-	"Do not reason, think, or explain: the only allowed output is the finished title itself.",
+-	"Your entire completion must be exactly one short line — the title — with no quotes, prefix, explanation, Markdown, or trailing punctuation."
+-].join("\n");
+ 
+ const folderSchema = z.object({
+ 	id: z.string(),
+@@ -428,76 +425,6 @@ function apply(ctx) {
+ 		});
+ 
+ 
+-		route("auto-rename", async (body, res) => {
+-			const sessionId = body?.sessionId;
+-			if (typeof sessionId !== "string" || !SESSION_ID_RE.test(sessionId)) {
+-				return respond(res, 400, { error: "bad-request" });
+-			}
+-			// One model stream per session at a time: a second concurrent
+-			// auto-rename would race the first on the pinned title.
+-			if (autoRenameInFlight.has(sessionId)) return respond(res, 409, { error: "auto-rename-in-progress" });
+-			autoRenameInFlight.add(sessionId);
+-			try {
+-				// The live session store owns the log; the title service owns the
+-				// pinned title event. Both are harness services (no storage here).
+-				ctx.logger.info("[dsh-session-folders] auto-rename: entry", sessionId);
+-				const session = ctx.sessions?.get(sessionId) ?? null;
+-				// Only live sessions can be renamed: the title service requires the
+-				// exact live session (restoring a closed log to append one event is
+-				// the harness's resume machinery, out of scope here).
+-				if (session === null) {
+-					return respond(res, 409, { error: "session-not-live" });
+-				}
+-				const firstMessage = firstUserMessageText(session.events);
+-				if (firstMessage === null || firstMessage.length === 0) {
+-					return respond(res, 400, { error: "no-user-message" });
+-				}
+-				// Rename with the exact model the session itself uses; without a
+-				// logged request route there is nothing "current" to ask.
+-				const route = session.requestHeader?.()?.config ?? null;
+-				if (route === null || typeof route?.provider !== "string" || typeof route?.model !== "string") {
+-					return respond(res, 409, { error: "session-has-no-model" });
+-				}
+-				const signal = AbortSignal.timeout(60000);
+-				try {
+-					const assembler = new BlockAssembler();
+-					for await (const chunk of ctx.llm.stream({
+-						provider: route.provider,
+-						model: route.model,
+-						messages: [createUserMessage({
+-							content: [{ type: "text", text: "First user message:\n" + firstMessage.slice(0, 4096) }],
+-							source: { kind: "plugin", plugin: "dsh-session-folders" }
+-						})],
+-						system: AUTO_RENAME_SYSTEM,
+-						maxTokens: 512,
+-						purpose: "session-title",
+-						signal
+-					})) {
+-						assembler.push(chunk);
+-					}
+-					signal.throwIfAborted();
+-					if (assembler.finish.kind === "error" || assembler.finish.kind === "aborted") {
+-						throw assembler.finish.failure;
+-					}
+-					const title = normalizeAutoTitle(
+-						assembler.blocks().filter((block) => block.type === "text")
+-							.map((block) => block.text).join(" ")
+-						);
+-					if (title.length === 0) {
+-						return respond(res, 502, { error: "empty-title" });
+-					}
+-					// Pin as a user title: same semantics as a manual rename, and the
+-					// automatic first-prompt generation will never overwrite it.
+-					ctx.sessionTitle.rename(session, title);
+-					respond(res, 200, { title });
+-				} catch (error) {
+-					respond(res, 502, { error: "auto-rename-failed", message: String(error?.message ?? error ?? "model call failed") });
+-				}
+-			} finally {
+-				autoRenameInFlight.delete(sessionId);
+-			}
+-		});
+-
+ 		route("unarchive", async (body, res) => {
+ 			const sessionId = body?.sessionId;
+ 			if (typeof sessionId !== "string" || !SESSION_ID_RE.test(sessionId)) {
