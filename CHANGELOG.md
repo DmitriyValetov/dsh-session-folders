@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.5.2
+
+### Fixed
+
+- **A concurrent mount can no longer fail the domain open.** `storageDomain.open` reserves the name before its first
+  await and publishes the domain afterwards, so a generation mounting while another is still opening saw neither a live
+  domain nor a free name; the resulting `already-open` is a fatal load failure. The entry now waits, bounded (40 × 50 ms),
+  for the other generation to publish the domain
+- The route-claim retry window is widened to 10 s, so a slow teardown of the previous generation cannot leave the paths
+  unclaimed
+
 ## v0.5.1
 
 ### Fixed

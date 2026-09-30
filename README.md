@@ -79,7 +79,7 @@ the DeepSeek Harness desktop app uses the `desktop` profile.
 ### From GitHub
 
 ```sh
-dsh plugin --profile web add 'github:DmitriyValetov/dsh-session-folders#v0.5.0'
+dsh plugin --profile web add 'github:DmitriyValetov/dsh-session-folders#v0.5.2'
 ```
 
 The built `lib/` is committed, so a git install runs no build script.

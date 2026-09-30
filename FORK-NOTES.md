@@ -48,7 +48,7 @@ starting»). С v0.5.1 плагин сначала спрашивает `ctx.sto
 build-скриптов нет):
 
 ```sh
-dsh plugin --profile desktop add 'github:DmitriyValetov/dsh-session-folders#v0.5.0'
+dsh plugin --profile desktop add 'github:DmitriyValetov/dsh-session-folders#v0.5.2'
 ```
 
 ## Установка / удаление / обновление
